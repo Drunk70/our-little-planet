@@ -285,7 +285,7 @@ pm2 start "npm run start" --name journal       # 或用 systemd
 - 用 Nginx / Caddy 反代 3000 端口并配上 HTTPS。Nginx 示例见 [`deploy/nginx.conf.example`](deploy/nginx.conf.example)（含 500MB 上传上限和 `/api/quick` 的 JSON 错误页），`DOMAIN=你的域名 bash scripts/apply-upload-limit.sh` 可一键安装并平滑重载。
 - 小内存服务器不想在线上构建：`DEPLOY_HOST=服务器别名 DOMAIN=你的域名 bash scripts/deploy.sh` 会在本机构建、只上传产物、换名重启，失败自动回退。
 - 给服务器设 `TZ=Asia/Shanghai`（或你们所在的时区），保证「在一起 N 天」按时区翻页。
-- **备份 = 备份 `data/` 文件夹**（`journal.db` + `media/`），拷走一份就不会丢。
+- **备份与迁移**：本地存储可在作者后台「备份与迁移」下载完整数据包，或执行 `npm run backup -- 备份路径.tar.gz`；新服务器通过 `npm run restore -- 备份路径.tar.gz` 校验并恢复。详见[备份与换服务器](docs/backup-and-migration.md)（含 OSS 限制及运行配置说明）。
 
 ### 演示站（可选）
 

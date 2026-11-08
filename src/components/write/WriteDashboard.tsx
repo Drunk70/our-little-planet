@@ -741,6 +741,10 @@ function DashboardInner({
         </Link>
       </div>
 
+      <div className="mt-4 text-right">
+        <Link href="/write/backup" className="link-soft text-sm">备份与迁移</Link>
+      </div>
+
       <div className="mt-7">
         {tab === "write" &&
           (editing ? (

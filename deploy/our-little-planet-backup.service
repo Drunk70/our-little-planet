@@ -1,0 +1,19 @@
+[Unit]
+Description=Back up Our Little Planet local data
+After=our-little-planet.service
+
+[Service]
+Type=oneshot
+User=planet
+Group=planet
+WorkingDirectory=/opt/our-little-planet
+EnvironmentFile=/opt/our-little-planet/.env.local
+Environment=NODE_ENV=production
+Environment=NODE_OPTIONS=--max-old-space-size=512
+ExecStart=/usr/bin/flock -n /var/backups/our-little-planet/.backup.lock /usr/bin/bash /opt/our-little-planet/deploy/backup-daily.sh
+TimeoutStartSec=7200
+Nice=10
+IOSchedulingClass=idle
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true

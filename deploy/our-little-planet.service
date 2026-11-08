@@ -1,0 +1,24 @@
+# 部署前建立 planet 用户，将项目与 .env.local 放到 /opt/our-little-planet。
+# 备案审核期间仅通过 SSH 本地转发访问；正式开放时由 Nginx 提供 HTTPS。
+[Unit]
+Description=Our Little Planet private journal
+After=network.target
+
+[Service]
+Type=simple
+User=planet
+Group=planet
+WorkingDirectory=/opt/our-little-planet
+EnvironmentFile=/opt/our-little-planet/.env.local
+Environment=NODE_ENV=production
+Environment=NODE_OPTIONS=--max-old-space-size=768
+ExecStart=/usr/bin/node node_modules/next/dist/bin/next start --hostname 127.0.0.1 --port 3000
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

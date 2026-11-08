@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily Our Little Planet backup
+
+[Timer]
+OnCalendar=*-*-* 04:15:00 Asia/Shanghai
+RandomizedDelaySec=300
+Persistent=true
+Unit=our-little-planet-backup.service
+
+[Install]
+WantedBy=timers.target

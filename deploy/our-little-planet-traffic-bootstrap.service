@@ -1,0 +1,14 @@
+[Unit]
+Description=Block unbudgeted public egress before networking starts
+DefaultDependencies=no
+After=local-fs.target
+Before=network-pre.target our-little-planet-traffic-guard.service
+Wants=network-pre.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/nft -f /etc/planet-traffic-guard/closed.nft
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

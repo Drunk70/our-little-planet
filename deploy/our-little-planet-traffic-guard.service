@@ -1,0 +1,26 @@
+[Unit]
+Description=Persist and enforce the private journal monthly outbound quota
+Requires=our-little-planet-traffic-bootstrap.service
+After=our-little-planet-traffic-bootstrap.service network.target
+Before=our-little-planet.service
+StartLimitIntervalSec=0
+
+[Service]
+Type=notify
+ExecStartPre=/usr/sbin/tc qdisc replace dev eth0 root tbf rate 10mbit burst 128kb latency 200ms
+ExecStart=/usr/bin/python3 /usr/local/sbin/planet-traffic-guard.py run
+Restart=always
+RestartSec=3
+WatchdogSec=30
+TimeoutStartSec=30
+TimeoutStopSec=10
+UMask=0077
+StateDirectory=planet-traffic-guard
+NoNewPrivileges=true
+ProtectHome=true
+ProtectSystem=strict
+PrivateTmp=true
+RestrictAddressFamilies=AF_UNIX AF_NETLINK AF_INET AF_INET6
+
+[Install]
+WantedBy=multi-user.target

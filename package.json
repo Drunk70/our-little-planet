@@ -7,6 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "backup": "node scripts/backup.mjs create",
+    "backup:verify": "node scripts/backup.mjs verify",
+    "restore": "node scripts/backup.mjs restore",
+    "test:backup": "node --test scripts/test-backup.mjs",
     "seed": "node scripts/seed.mjs",
     "migrate-oss": "node scripts/migrate-to-oss.mjs",
     "convert-heic": "node scripts/convert-heic.mjs",
@@ -27,7 +31,8 @@
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "sharp": "^0.35.4",
-    "solarlunar": "^3.1.0"
+    "solarlunar": "^3.1.0",
+    "tar": "7.5.22"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

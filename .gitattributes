@@ -1,0 +1,6 @@
+# Keep Linux deployment files usable after a Windows checkout and upload.
+deploy/*.sh text eol=lf
+deploy/*.service text eol=lf
+deploy/*.timer text eol=lf
+deploy/*.conf text eol=lf
+deploy/*.py text eol=lf
