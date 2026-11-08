@@ -12,7 +12,7 @@ export default async function BookLayout({ children }: { children: React.ReactNo
   return (
     <>
       <TopNav title={settings.title} author={author} reader={reader} sections={sectionVisibility(settings)} />
-      <main className="relative mx-auto w-full max-w-6xl flex-1 px-4 pb-8 sm:px-6">{children}</main>
+      <main className="relative mx-auto w-full max-w-6xl flex-1 px-3.5 pb-24 sm:px-6 md:pb-10">{children}</main>
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
         <SiteFooter reader={reader} />
       </div>

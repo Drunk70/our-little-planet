@@ -102,7 +102,7 @@ export function HomeHero({ photos, quotes, author = false }: { photos: AlbumPhot
             animate={{ opacity: 1, rotate: 0, y: 0 }}
             exit={{ opacity: 0, rotate: -6, y: 8 }}
             transition={{ duration: 0.4 }}
-            className="absolute -bottom-8 -left-4 w-48 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-rose/60 focus-visible:ring-offset-4 sm:-left-12"
+            className="absolute -bottom-6 left-2 w-44 cursor-pointer outline-none transition-transform active:scale-95 focus-visible:ring-2 focus-visible:ring-rose/60 sm:-bottom-8 sm:-left-12 sm:w-48"
             onClick={nextQuote}
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") {
@@ -127,6 +127,9 @@ export function HomeHero({ photos, quotes, author = false }: { photos: AlbumPhot
           </motion.div>
         )}
       </AnimatePresence>
+      <p className="mt-8 text-center font-hand text-xs text-ink-soft/70 sm:hidden">
+        点拍立得翻背面 · 点便签听下一句
+      </p>
       <Lightbox
         photos={pool}
         index={zoom}

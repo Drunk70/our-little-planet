@@ -144,9 +144,9 @@ export function TimelineList({
         <Rope className="h-full" />
       </div>
 
-      <ol className="space-y-20">
+      <ol className="space-y-12 sm:space-y-20">
         {startDate && (
-          <li className="relative pl-10 sm:grid sm:grid-cols-2 sm:gap-28 sm:pl-0">
+          <li className="relative pl-7 sm:grid sm:grid-cols-2 sm:gap-28 sm:pl-0">
             {/* 第一枚邮票：麻绳的起点，我们的开始 */}
             <div className="sm:col-start-1 sm:justify-self-end">
               <Stamp className="mx-auto w-fit max-w-full">
@@ -162,7 +162,7 @@ export function TimelineList({
         )}
 
         {milestones.map((m, i) => (
-          <li key={m.id} className="relative pl-10 sm:grid sm:grid-cols-2 sm:gap-28 sm:pl-0">
+          <li key={m.id} className="relative pl-7 sm:grid sm:grid-cols-2 sm:gap-28 sm:pl-0">
             <HangingCluster m={m} i={i} author={author} />
           </li>
         ))}

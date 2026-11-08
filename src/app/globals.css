@@ -140,6 +140,11 @@
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
+html {
+  -webkit-tap-highlight-color: transparent;
+  scroll-padding-bottom: 6rem;
+}
+
 body {
   background: var(--paper);
   color: var(--ink);
@@ -175,19 +180,76 @@ body {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
 }
 
-/* 手账纸卡：全站统一容器 */
+/* 手账纸卡：全站统一容器（双层纸边微露与微立体装订感） */
 .card-paper {
   position: relative;
   background: var(--card);
   border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
-  border-radius: 20px;
-  padding: 1.6rem 1.4rem 1.7rem;
-  box-shadow: var(--elev-1);
+  border-radius: 18px;
+  padding: 1.25rem 1.15rem 1.35rem;
+  box-shadow:
+    var(--elev-1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  transition: transform 0.4s var(--ease-spring), box-shadow 0.4s var(--ease-spring);
 }
 @media (min-width: 640px) {
   .card-paper {
+    border-radius: 22px;
     padding: 2rem 2.2rem 2.1rem;
+    box-shadow:
+      0 1px 2px rgba(92, 74, 66, 0.05),
+      0 6px 18px rgba(92, 74, 66, 0.08),
+      3px 3px 0 color-mix(in srgb, var(--paper-deep) 65%, transparent),
+      inset 0 1px 0 rgba(255, 255, 255, 0.8);
   }
+}
+.dark .card-paper {
+  border-color: color-mix(in srgb, var(--rose) 14%, transparent);
+  box-shadow:
+    var(--elev-1),
+    0 0 24px rgba(231, 149, 176, 0.03),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+@media (min-width: 640px) {
+  .dark .card-paper {
+    box-shadow:
+      var(--elev-1),
+      3px 3px 0 color-mix(in srgb, #000 35%, transparent),
+      0 0 24px rgba(231, 149, 176, 0.03),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+}
+
+/* 手账网格与点阵底纹 */
+.paper-grid {
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--ink) 4.5%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--ink) 4.5%, transparent) 1px, transparent 1px);
+  background-size: 1.25rem 1.25rem;
+}
+.paper-dots {
+  background-image: radial-gradient(color-mix(in srgb, var(--ink) 6%, transparent) 1px, transparent 1px);
+  background-size: 1.25rem 1.25rem;
+}
+
+/* 拍立得相纸质感：微暖银盐相纸 + 照片内凹暗角 */
+.polaroid-frame {
+  background-color: #fffdf9;
+  border: 1px solid rgba(92, 74, 66, 0.07);
+  box-shadow:
+    0 2px 4px rgba(92, 74, 66, 0.05),
+    0 8px 20px rgba(92, 74, 66, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+.dark .polaroid-frame {
+  background-color: #f6eee4;
+  border-color: rgba(0, 0, 0, 0.25);
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.35),
+    0 10px 24px rgba(0, 0, 0, 0.45);
+}
+.polaroid-photo-inner {
+  box-shadow: inset 0 0 10px rgba(92, 74, 66, 0.12);
 }
 
 /* 信纸：横线，行高与横线间距一致，让字骑在线上 */
@@ -233,21 +295,21 @@ body {
 .washi-tape {
   position: absolute;
   pointer-events: none;
-  width: 92px;
-  height: 26px;
+  width: 88px;
+  height: 24px;
   background:
-    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.4) 0 5px, transparent 5px 10px),
-    color-mix(in srgb, var(--tone, #e48ba8) 72%, transparent);
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.35) 0 4px, transparent 4px 8px),
+    color-mix(in srgb, var(--tone, #e48ba8) 75%, transparent);
   transform: translateX(-50%) rotate(var(--r, -6deg));
   clip-path: polygon(
-    3% 0%, 97% 3%, 100% 18%, 96% 32%, 100% 55%, 97% 72%, 100% 88%, 97% 100%,
-    3% 97%, 0% 82%, 4% 60%, 0% 40%, 4% 22%
+    2% 0%, 98% 2%, 100% 16%, 97% 32%, 100% 50%, 97% 68%, 100% 84%, 98% 100%,
+    2% 98%, 0% 84%, 3% 66%, 0% 50%, 3% 34%, 0% 16%
   );
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   opacity: 0.92;
 }
 .dark .washi-tape {
-  opacity: 0.8;
+  opacity: 0.82;
 }
 
 /* 便利贴：折角用伪元素。纸是亮的粉彩实物，暗色模式下墨字固定用深色 */
@@ -256,7 +318,7 @@ body {
   position: relative;
   background: var(--tone);
   border-radius: 4px 4px 14px 4px;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.14);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
   transition: transform 0.45s var(--ease-spring), box-shadow 0.45s var(--ease-spring);
 }
 .sticky-note::after {
@@ -269,8 +331,10 @@ body {
   background: linear-gradient(135deg, transparent 50%, rgba(0, 0, 0, 0.14) 50%);
   border-radius: 0 0 14px 0;
 }
-.sticky-note:hover {
-  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.2);
+@media (hover: hover) {
+  .sticky-note:hover {
+    box-shadow: 0 12px 26px rgba(0, 0, 0, 0.2);
+  }
 }
 .dark .sticky-note,
 .dark .sticky-note * {

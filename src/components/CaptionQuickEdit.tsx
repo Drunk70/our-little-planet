@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Check, PencilSimple, Trash, X } from "@phosphor-icons/react";
 import { cn } from "@/lib/cn";
 import { useToast } from "@/components/Toast";
+import { JournalDatePicker } from "@/components/journal/JournalDatePicker";
 
 /** 灯箱里的「快速改日期」：和改描述一套交互，改的是这张照片自己的拍摄日期。
  *  保存走 PATCH /api/media/:id 的 entryDate：服务端会把它（连同 Live 配对视频）
@@ -20,35 +21,22 @@ export function MediaDateEdit({
   className?: string;
 }) {
   const toast = useToast();
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(date);
   const [saving, setSaving] = useState(false);
-  const cancelledRef = useRef(false);
 
-  function begin() {
-    cancelledRef.current = false;
-    setDraft(date);
-    setEditing(true);
-  }
-
-  async function save() {
-    if (draft === date || !/^\d{4}-\d{2}-\d{2}$/.test(draft)) {
-      setEditing(false);
-      return;
-    }
+  async function handlePick(newDate: string) {
+    if (newDate === date || !/^\d{4}-\d{2}-\d{2}$/.test(newDate)) return;
     setSaving(true);
     try {
       const res = await fetch(`/api/media/${mediaId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ entryDate: draft }),
+        body: JSON.stringify({ entryDate: newDate }),
       });
       if (!res.ok) {
         const data = (await res.json().catch(() => ({}))) as { error?: string };
         throw new Error(data.error ?? "保存失败");
       }
-      setEditing(false);
-      onSaved?.(draft);
+      onSaved?.(newDate);
       toast("日期改好了，这张已挪到那天的页面");
     } catch (e) {
       toast(e instanceof Error ? e.message : "没保存上，再试一次", "error");
@@ -57,68 +45,25 @@ export function MediaDateEdit({
     }
   }
 
-  if (!editing) {
-    return (
-      <span className={cn("inline-flex items-center gap-2", className)}>
-        <span className="font-round text-sm tracking-widest opacity-70">{date.replaceAll("-", ".")}</span>
-        <button
-          type="button"
-          onClick={begin}
-          title="改这张的日期（会挪到那天的页面）"
-          aria-label="编辑这张照片的日期"
-          className="grid size-7 shrink-0 place-items-center rounded-full bg-paper/15 text-paper backdrop-blur transition hover:bg-paper/30"
-        >
-          <PencilSimple weight="bold" className="size-3.5" />
-        </button>
-      </span>
-    );
-  }
-
   return (
     <span className={cn("inline-flex items-center gap-2", className)}>
-      <input
-        type="date"
-        value={draft}
-        disabled={saving}
-        onChange={(e) => setDraft(e.target.value)}
-        onKeyDown={(e) => {
-          e.stopPropagation();
-          if (e.key === "Enter") {
-            e.preventDefault();
-            void save();
-          }
-          if (e.key === "Escape") {
-            e.preventDefault();
-            cancelledRef.current = true;
-            setEditing(false);
-          }
-        }}
-        // 深色灯箱底：让浏览器原生日期控件也走深色，否则弹出的日历是白的很突兀
-        className="rounded-lg border border-paper/30 bg-transparent px-2 py-1 font-round text-sm text-paper caret-rose outline-none [color-scheme:dark] focus:border-paper/70"
+      <JournalDatePicker
+        value={date}
+        onChange={(d) => void handlePick(d)}
+        trigger={(open) => (
+          <button
+            type="button"
+            onClick={open}
+            disabled={saving}
+            title="改这张的日期（会挪到那天的页面）"
+            aria-label="编辑这张照片的日期"
+            className="inline-flex items-center gap-1.5 rounded-full bg-paper/15 px-3 py-1 text-paper backdrop-blur transition hover:bg-paper/30 disabled:opacity-50 active:scale-95"
+          >
+            <span className="font-round text-sm tracking-widest">{date.replaceAll("-", ".")}</span>
+            <PencilSimple weight="bold" className="size-3.5 opacity-70" />
+          </button>
+        )}
       />
-      <button
-        type="button"
-        aria-label="保存日期"
-        disabled={saving}
-        onMouseDown={(e) => e.preventDefault()}
-        onClick={() => void save()}
-        className="grid size-8 place-items-center rounded-full bg-paper/15 text-paper backdrop-blur transition hover:bg-paper/30 disabled:opacity-50"
-      >
-        <Check weight="bold" className="size-4" />
-      </button>
-      <button
-        type="button"
-        aria-label="不改了"
-        disabled={saving}
-        onMouseDown={(e) => e.preventDefault()}
-        onClick={() => {
-          cancelledRef.current = true;
-          setEditing(false);
-        }}
-        className="grid size-8 place-items-center rounded-full bg-paper/15 text-paper backdrop-blur transition hover:bg-paper/30 disabled:opacity-50"
-      >
-        <X weight="bold" className="size-4" />
-      </button>
     </span>
   );
 }

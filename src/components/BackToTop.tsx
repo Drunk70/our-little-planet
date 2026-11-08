@@ -37,7 +37,7 @@ export function BackToTop() {
             onClick={() => window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" })}
             aria-label="回到最上方"
             title="回到最上方"
-            className="fixed bottom-5 right-5 z-40 grid size-10 place-items-center rounded-full border border-ink/10 bg-paper/90 text-ink shadow-card backdrop-blur transition-transform duration-300 ease-spring hover:-translate-y-1 hover:text-rose-deep"
+            className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] right-4 z-30 grid size-10 place-items-center rounded-full border border-ink/10 bg-paper/90 text-ink shadow-card backdrop-blur transition-transform duration-300 ease-spring hover:-translate-y-1 hover:text-rose-deep md:bottom-5 md:right-5"
           >
             <ArrowUp weight="bold" className="size-4.5" />
           </motion.button>

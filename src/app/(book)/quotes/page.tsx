@@ -48,11 +48,11 @@ export default async function QuotesPage() {
           )}
         </div>
       ) : (
-        <div className="mt-14 columns-1 gap-8 sm:columns-2 lg:columns-3 [&>*]:mb-8">
+        <div className="mt-8 columns-1 gap-5 sm:mt-14 sm:columns-2 sm:gap-8 lg:columns-3 [&>*]:mb-5 sm:[&>*]:mb-8">
           {quotes.map((q) => {
             const audio = q.media.find((m) => m.kind === "audio");
             return (
-              <div key={q.id} className="break-inside-avoid px-2 sm:px-0">
+              <div key={q.id} className="break-inside-avoid px-1 sm:px-0">
                 <Reveal>
                   <StickyNote
                     text={q.body || undefined}

@@ -9,6 +9,7 @@ import { PolaroidCard } from "@/components/journal/PolaroidCard";
 import { StickyNote } from "@/components/journal/StickyNote";
 import { TagDropdown } from "@/components/write/TagDropdown";
 import { Lightbox, type LightboxPhoto } from "./Lightbox";
+import { JournalDatePicker } from "@/components/journal/JournalDatePicker";
 import { useToast } from "@/components/Toast";
 
 type AlbumItem = LightboxPhoto;
@@ -82,16 +83,23 @@ function WallQuickEdit({
         className="w-full rounded-lg border border-ink/15 bg-paper px-2 py-1 text-sm outline-none placeholder:text-ink-soft/50 focus:border-rose"
       />
       <div className="flex items-center justify-between gap-1.5">
-        <input
-          type="date"
+        <JournalDatePicker
           value={date}
-          disabled={saving}
-          onChange={(e) => {
-            if (/^\d{4}-\d{2}-\d{2}$/.test(e.target.value) && e.target.value !== date) {
-              void save({ entryDate: e.target.value });
+          onChange={(newDate) => {
+            if (newDate && newDate !== date) {
+              void save({ entryDate: newDate });
             }
           }}
-          className="rounded-lg border border-ink/15 bg-paper px-2 py-1 font-round text-xs font-bold text-ink outline-none focus:border-rose"
+          trigger={(open) => (
+            <button
+              type="button"
+              disabled={saving}
+              onClick={open}
+              className="rounded-lg border border-ink/15 bg-paper px-2 py-1 font-round text-xs font-bold text-ink outline-none hover:border-rose focus:border-rose active:scale-95"
+            >
+              {date ? date.replaceAll("-", ".") : "选日期"}
+            </button>
+          )}
         />
         {saving && <span className="font-round text-[10px] font-bold text-ink-soft/70">保存中…</span>}
       </div>
@@ -319,86 +327,108 @@ export function AlbumGrid({
   return (
     <div>
       {/* 月份索引贴 + 按具体某天看 */}
-      <div className="mb-4 flex flex-wrap items-center gap-2.5">
-        <button
-          type="button"
-          onClick={() => {
-            setMonth("all");
-            setDay("");
-          }}
-          className={cn(
-            "flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-bold transition-all duration-300 ease-spring",
-            month === "all" ? "-translate-y-px bg-rose-deep text-paper shadow-md" : "border border-ink/20 text-ink-soft hover:bg-ink/5"
-          )}
-        >
-          全部
-          <CountBadge n={monthAllN} active={month === "all"} />
-        </button>
-        {months.map(([m, n]) => (
+      <div className="mb-3 flex items-center justify-between gap-2 sm:mb-4">
+        <div className="no-scrollbar flex min-w-0 flex-1 items-center gap-2 overflow-x-auto py-1">
           <button
-            key={m}
             type="button"
             onClick={() => {
-              setMonth(m);
-              setDay(""); // 换了月份，具体到天的筛选一起清掉
+              setMonth("all");
+              setDay("");
             }}
             className={cn(
-              "flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-bold transition-all duration-300 ease-spring",
-              month === m
-                ? "-translate-y-px bg-rose-deep text-paper shadow-md"
-                : "border border-ink/20 text-ink-soft hover:bg-ink/5"
+              "shrink-0 flex items-center gap-1.5 rounded-full px-3.5 py-1 text-xs font-bold transition-all duration-300 ease-spring sm:px-4 sm:py-1.5 sm:text-sm",
+              month === "all" ? "-translate-y-px bg-rose-deep text-paper shadow-md" : "border border-ink/20 text-ink-soft hover:bg-ink/5"
             )}
           >
-            {monthLabel(m)}
-            <CountBadge n={n} active={month === m} />
+            全部
+            <CountBadge n={monthAllN} active={month === "all"} />
           </button>
-        ))}
-        {/* 按某一天看：选了日期自动切到那个月；旁边有 × 一键清掉 */}
-        <span className={cn("flex items-center gap-1 rounded-full border px-3 py-1.5 transition", day ? "border-rose-deep/60 bg-rose-soft/50" : "border-ink/20")}>
-          <CalendarBlank weight="bold" className="size-3.5 text-ink-soft" />
-          <input
-            type="date"
-            value={day}
-            onChange={(e) => {
-              setDay(e.target.value);
-              if (e.target.value) setMonth(e.target.value.slice(0, 7));
-            }}
-            aria-label="按具体日期筛选"
-            className="bg-transparent font-round text-sm font-bold text-ink outline-none"
-          />
-          {day && (
-            <button type="button" onClick={() => setDay("")} aria-label="清除日期筛选" className="grid size-5 place-items-center rounded-full text-ink-soft transition hover:bg-ink/10 hover:text-ink">
-              <X weight="bold" className="size-3" />
+          {months.map(([m, n]) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => {
+                setMonth(m);
+                setDay(""); // 换了月份，具体到天的筛选一起清掉
+              }}
+              className={cn(
+                "shrink-0 flex items-center gap-1.5 rounded-full px-3.5 py-1 text-xs font-bold transition-all duration-300 ease-spring sm:px-4 sm:py-1.5 sm:text-sm",
+                month === m
+                  ? "-translate-y-px bg-rose-deep text-paper shadow-md"
+                  : "border border-ink/20 text-ink-soft hover:bg-ink/5"
+              )}
+            >
+              {monthLabel(m)}
+              <CountBadge n={n} active={month === m} />
+            </button>
+          ))}
+        </div>
+        <div className="flex shrink-0 items-center gap-1.5">
+          {/* 按某一天看：打开手账日历，选了日期自动切到那个月；旁边有 × 一键清掉 */}
+          <div className="flex items-center gap-1">
+            <JournalDatePicker
+              value={day}
+              onChange={(selectedDay) => {
+                setDay(selectedDay);
+                if (selectedDay) setMonth(selectedDay.slice(0, 7));
+              }}
+              highlightDates={all.map((p) => p.entryDate)}
+              trigger={(open) => (
+                <button
+                  type="button"
+                  onClick={open}
+                  className={cn(
+                    "flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-bold transition sm:px-3 sm:py-1.5 sm:text-sm",
+                    day
+                      ? "border-rose-deep/60 bg-rose-soft/50 text-rose-deep"
+                      : "border-ink/20 text-ink-soft hover:bg-ink/5 hover:text-ink"
+                  )}
+                >
+                  <CalendarBlank weight="bold" className="size-3.5" />
+                  <span className="font-round">{day ? day.replaceAll("-", ".") : "选日期"}</span>
+                </button>
+              )}
+            />
+            {day && (
+              <button
+                type="button"
+                onClick={() => setDay("")}
+                aria-label="清除日期筛选"
+                title="清除日期筛选"
+                className="grid size-5 place-items-center rounded-full text-ink-soft transition hover:bg-ink/10 hover:text-ink"
+              >
+                <X weight="bold" className="size-3" />
+              </button>
+            )}
+          </div>
+          {/* 作者的管理开关：开了以后勾选批量删、卡片下面直接改描述和日期 */}
+          {author && !batchProgress && (
+            <button
+              type="button"
+              onClick={() => {
+                setManage((v) => !v);
+                setSelected(new Set());
+                setEditingId(null);
+                setBatchConfirm(false);
+                setTagPanel(false);
+                setTagsToAdd([]);
+                setTagDraft("");
+              }}
+              aria-pressed={manage}
+              className={cn(
+                "flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold transition-all duration-300 ease-spring sm:px-4 sm:py-1.5 sm:text-sm",
+                manage ? "-translate-y-px bg-ink text-paper shadow-md" : "border border-ink/20 text-ink-soft hover:bg-ink/5"
+              )}
+            >
+              <PencilSimple weight="bold" className="size-3.5" />
+              {manage ? "完成" : "管理"}
             </button>
           )}
-        </span>
-        {/* 作者的管理开关：开了以后勾选批量删、卡片下面直接改描述和日期 */}
-        {author && !batchProgress && (
-          <button
-            type="button"
-            onClick={() => {
-              setManage((v) => !v);
-              setSelected(new Set());
-              setEditingId(null);
-              setBatchConfirm(false);
-              setTagPanel(false);
-              setTagsToAdd([]);
-              setTagDraft("");
-            }}
-            aria-pressed={manage}
-            className={cn(
-              "ml-auto flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-bold transition-all duration-300 ease-spring",
-              manage ? "-translate-y-px bg-ink text-paper shadow-md" : "border border-ink/20 text-ink-soft hover:bg-ink/5"
-            )}
-          >
-            <PencilSimple weight="bold" className="size-3.5" />
-            {manage ? "完成" : "管理"}
-          </button>
-        )}
+        </div>
       </div>
 
-      {/* 类型筛选（照片含 Live 图）+ 标签索引贴：小圆点 = 这个标签的专属颜色 */}
-      <div className="mb-6 flex flex-wrap items-center gap-2">
+      {/* 类型筛选（照片含 Live 图）+ 标签索引贴：横向滑轨 */}
+      <div className="no-scrollbar mb-5 flex items-center gap-2 overflow-x-auto py-1 sm:mb-6 sm:flex-wrap">
         {(
           [
             ["all", `全部 ${kindAllN}`],
@@ -412,14 +442,14 @@ export function AlbumGrid({
             onClick={() => setKind(value)}
             aria-pressed={kind === value}
             className={cn(
-              "rounded-full px-3.5 py-1 text-sm font-bold transition-all duration-300 ease-spring",
+              "shrink-0 rounded-full px-3 py-1 text-xs font-bold transition-all duration-300 ease-spring sm:px-3.5 sm:text-sm",
               kind === value ? "-translate-y-px bg-mist text-ink shadow-md" : "border border-ink/20 text-ink-soft hover:bg-ink/5"
             )}
           >
             {label}
           </button>
         ))}
-        {tags.length > 0 && <span aria-hidden className="mx-1 h-4 w-px bg-ink/15" />}
+        {tags.length > 0 && <span aria-hidden className="mx-0.5 h-4 w-px shrink-0 bg-ink/15 sm:mx-1" />}
         {tags.map(([t, n]) => {
             const active = tag === t;
             return (
@@ -428,7 +458,7 @@ export function AlbumGrid({
                 type="button"
                 onClick={() => setTag(active ? "all" : t)}
                 className={cn(
-                  "flex items-center gap-1.5 rounded-full px-3.5 py-1 text-sm font-bold transition-all duration-300 ease-spring",
+                  "shrink-0 flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition-all duration-300 ease-spring sm:px-3.5 sm:text-sm",
                   active
                     ? "-translate-y-px bg-ink text-paper shadow-md"
                     : "border border-dashed border-ink/25 text-ink-soft hover:border-ink/50 hover:bg-ink/5"
@@ -450,7 +480,7 @@ export function AlbumGrid({
 
       {/* 瀑布墙：每组「存照片」的第一张前面，贴一张写着那句话的便利贴。
           管理模式下卡片变成可勾选，下面挂着描述/日期快速编辑 */}
-      <div className="columns-2 gap-6 sm:columns-3 lg:columns-4 [&>*]:mb-6">
+      <div className="columns-2 gap-3 sm:gap-6 sm:columns-3 lg:columns-4 [&>*]:mb-3 sm:[&>*]:mb-6">
         {shown.map((p, i) => {
           const firstOfGroup = noteAt.has(i);
           const sel = selected.has(p.id);
@@ -549,7 +579,7 @@ export function AlbumGrid({
 
       {/* 管理模式的底部操作条：全选 / 批量删除（两段确认） */}
       {manage && !batchProgress && (
-        <div className="fixed bottom-5 left-1/2 z-40 flex -translate-x-1/2 flex-wrap items-center justify-center gap-3 rounded-full bg-ink px-5 py-2.5 text-paper shadow-lifted">
+        <div className="fixed bottom-20 left-1/2 z-40 flex -translate-x-1/2 flex-wrap items-center justify-center gap-2.5 rounded-full bg-ink px-4 py-2 text-paper shadow-lifted sm:gap-3 sm:px-5 sm:py-2.5 md:bottom-6">
           <span className="font-round text-xs font-bold tracking-wider text-paper/80">
             {selected.size > 0 ? `已选 ${selected.size} 张` : "点照片勾选"}
           </span>
@@ -559,7 +589,7 @@ export function AlbumGrid({
               setSelected((prev) => (prev.size === shown.length ? new Set() : new Set(shown.map((p) => p.id))));
               setBatchConfirm(false);
             }}
-            className="flex items-center gap-1.5 rounded-full bg-paper/15 px-3.5 py-1.5 text-xs font-bold transition hover:bg-paper/30"
+            className="flex items-center gap-1.5 rounded-full bg-paper/15 px-3 py-1 text-xs font-bold transition hover:bg-paper/30 sm:px-3.5 sm:py-1.5"
           >
             <CheckSquare weight="bold" className="size-3.5" />
             {selected.size === shown.length && shown.length > 0 ? "取消全选" : "全选本组"}
@@ -573,7 +603,7 @@ export function AlbumGrid({
               }}
               aria-expanded={tagPanel}
               className={cn(
-                "flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-bold transition",
+                "flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1 text-xs font-bold transition sm:px-3.5 sm:py-1.5",
                 tagPanel ? "bg-butter text-ink" : "bg-paper/15 text-paper hover:bg-paper/30"
               )}
             >
@@ -589,7 +619,7 @@ export function AlbumGrid({
                 void batchDelete();
               }}
               className={cn(
-                "flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-bold transition",
+                "flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1 text-xs font-bold transition sm:px-3.5 sm:py-1.5",
                 batchConfirm ? "bg-rose-deep text-paper" : "bg-paper/15 text-paper hover:bg-paper/30"
               )}
             >
@@ -601,7 +631,7 @@ export function AlbumGrid({
       )}
       {/* 批量贴标签面板：浮在操作条上方，攒好标签一次贴到所有选中的照片 */}
       {manage && tagPanel && !batchProgress && selected.size > 0 && (
-        <div className="fixed bottom-20 left-1/2 z-40 w-[min(92vw,26rem)] -translate-x-1/2 rounded-2xl bg-card p-4 shadow-lifted">
+        <div className="fixed bottom-36 left-1/2 z-40 w-[min(92vw,26rem)] -translate-x-1/2 rounded-2xl bg-card p-4 shadow-lifted md:bottom-24">
           <p className="mb-2 text-sm font-bold text-ink">
             给选中的 {selected.size} 张贴标签
           </p>
@@ -676,7 +706,7 @@ export function AlbumGrid({
         </div>
       )}
       {batchProgress && (
-        <div className="fixed bottom-5 left-1/2 z-40 -translate-x-1/2 rounded-full bg-ink px-5 py-2.5 font-round text-xs font-bold tracking-wider text-paper shadow-lifted">
+        <div className="fixed bottom-20 left-1/2 z-40 -translate-x-1/2 rounded-full bg-ink px-5 py-2.5 font-round text-xs font-bold tracking-wider text-paper shadow-lifted md:bottom-6">
           {batchProgress}
         </div>
       )}

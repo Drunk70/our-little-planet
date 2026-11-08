@@ -54,7 +54,7 @@ export function LetterView({
       {letter && (
         <motion.div
           key="letter-overlay"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/70 p-4 backdrop-blur-sm sm:p-8"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-ink/70 p-0 backdrop-blur-sm sm:items-center sm:p-8"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -64,7 +64,7 @@ export function LetterView({
           <motion.article
             key={letter.id}
             className={cn(
-              "letter-paper relative max-h-[85dvh] w-full max-w-2xl overflow-y-auto rounded-lg px-7 pb-14 pt-10 shadow-lifted sm:px-12"
+              "letter-paper relative max-h-[92dvh] w-full max-w-2xl overflow-y-auto rounded-t-3xl px-5 pb-16 pt-5 shadow-lifted sm:max-h-[85dvh] sm:rounded-2xl sm:px-12 sm:pt-8"
             )}
             initial={reduce ? false : { y: 80, opacity: 0, scale: 0.96, rotate: -1 }}
             animate={{ y: 0, opacity: 1, scale: 1, rotate: 0 }}
@@ -73,6 +73,32 @@ export function LetterView({
             onClick={(e) => e.stopPropagation()}
           >
             <WashiTape tone="rose" rotate={-5} className="-top-3 left-1/2" />
+
+            {/* 吸顶操作条：无论信多长，随时一键「折好放回」 */}
+            <div className="sticky top-0 z-20 -mx-5 -mt-5 mb-5 flex items-center justify-between border-b border-ink/10 bg-paper-warm/95 px-5 py-2.5 backdrop-blur-sm sm:-mx-12 sm:-mt-8 sm:px-12 sm:py-3">
+              <div className="flex items-center gap-2">
+                {author && (
+                  <Link
+                    href={`/write?edit=${letter.id}`}
+                    aria-label="编辑这封信"
+                    title="编辑这封信"
+                    className="grid size-8 place-items-center rounded-full text-ink-soft/70 transition hover:bg-ink/10 hover:text-ink"
+                  >
+                    <PencilSimple className="size-4" />
+                  </Link>
+                )}
+                <span className="font-hand text-xs text-ink-soft">写给你的信</span>
+              </div>
+              <button
+                type="button"
+                aria-label="折好放回"
+                onClick={onClose}
+                className="flex items-center gap-1 rounded-full bg-ink/10 px-3 py-1 font-hand text-xs font-bold text-ink transition hover:bg-ink/20 active:scale-95"
+              >
+                <span>折好放回</span>
+                <X weight="bold" className="size-3.5" />
+              </button>
+            </div>
 
             <p className="font-script text-3xl leading-none text-rose-deep">
               {letter.entryDate.replaceAll("-", ".")}
@@ -89,25 +115,6 @@ export function LetterView({
             </footer>
 
             {letter.reader !== false && <CommentBox entryId={letter.id} initial={letter.replies ?? []} />}
-
-            <button
-              type="button"
-              aria-label="折好放回"
-              onClick={onClose}
-              className="absolute right-3 top-3 grid size-9 place-items-center rounded-full text-ink-soft/60 transition hover:bg-ink/10 hover:text-ink"
-            >
-              <X weight="bold" className="size-4" />
-            </button>
-            {author && (
-              <Link
-                href={`/write?edit=${letter.id}`}
-                aria-label="编辑这封信"
-                title="编辑这封信"
-                className="absolute left-3 top-3 grid size-9 place-items-center rounded-full text-ink-soft/60 transition hover:bg-ink/10 hover:text-ink"
-              >
-                <PencilSimple className="size-4" />
-              </Link>
-            )}
           </motion.article>
         </motion.div>
       )}

@@ -73,6 +73,26 @@ export function Lightbox({
   const [liveWarming, setLiveWarming] = useState(false);
   const [videoErr, setVideoErr] = useState<{ id: string }>({ id: "" });
   const videoBroken = Boolean(photo && isVideo && videoErr.id === photo.id);
+  const touchStart = useRef<{ x: number; y: number; time: number } | null>(null);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function playLive() {
+    const v = liveRef.current;
+    if (!v || !photo) return;
+    if (livePlaying) {
+      v.pause();
+      setLive({ id: photo.id, on: false });
+      return;
+    }
+    v.currentTime = 0;
+    v.muted = false;
+    setLive({ id: photo.id, on: true });
+    setLiveWarming(true);
+    void v.play().catch(() => {
+      v.muted = true;
+      void v.play().catch(() => undefined);
+    });
+  }
 
   useEffect(() => {
     if (!photo?.liveVideo) return;
@@ -135,155 +155,189 @@ export function Lightbox({
           transition={{ duration: 0.25 }}
           onClick={onClose}
         >
-          {/* 滚动区：矮窗口里「大图 + 描述」放不下时可以在灯箱内滚动（之前会被裁掉够不着）；
-              翻页/关闭按钮留在滚动区外，始终钉在视口角落 */}
-          <div className="absolute inset-0 overflow-y-auto p-4 sm:p-8">
-          <div className="flex min-h-full flex-col items-center justify-center gap-4">
-          <motion.figure
-            key={photo.id}
-            className="relative flex max-h-full flex-col items-center"
-            initial={{ scale: 0.94, opacity: 0, rotate: -1 }}
-            animate={{ scale: 1, opacity: 1, rotate: 0 }}
-            exit={{ scale: 0.96, opacity: 0 }}
-            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {isVideo ? (
-              <video
+          {/* 顶部常驻 HUD 栏：张数序号 + 日期 + 关闭按钮 */}
+          <div className="fixed inset-x-0 top-0 z-50 flex items-center justify-between p-3 sm:p-5 pointer-events-none">
+            <div className="flex items-center gap-2 rounded-full bg-ink/60 px-3.5 py-1 font-round text-xs font-bold tracking-widest text-paper shadow-md backdrop-blur-md pointer-events-auto">
+              <span>{index! + 1} / {photos.length}</span>
+              <span className="opacity-40">·</span>
+              <span className="opacity-80">{(dateById[photo?.id ?? ""] ?? photo?.entryDate ?? "").replaceAll("-", ".")}</span>
+            </div>
+            <button
+              type="button"
+              aria-label="关闭"
+              onClick={onClose}
+              className="grid size-10 place-items-center rounded-full bg-ink/60 text-paper shadow-md backdrop-blur-md transition hover:bg-ink/80 active:scale-95 pointer-events-auto sm:size-11"
+            >
+              <X weight="bold" className="size-5" />
+            </button>
+          </div>
+
+          {/* 滚动区：矮窗口里「大图 + 描述」放不下时可以在灯箱内滚动 */}
+          <div className="absolute inset-0 overflow-y-auto px-4 pb-8 pt-16 sm:p-8">
+            <div className="flex min-h-full flex-col items-center justify-center gap-4">
+              <motion.figure
                 key={photo.id}
-                src={photo.url}
-                poster={photo.posterUrl ?? undefined}
-                controls
-                autoPlay
-                playsInline
-                onError={() => setVideoErr({ id: photo.id })}
-                className="max-h-[72vh] max-w-full rounded-lg bg-ink shadow-lifted"
-              />
-            ) : (
-              <div className="rounded-lg bg-white p-2.5 shadow-lifted sm:p-3">
-                <div className="relative select-none [-webkit-touch-callout:none]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={photo.url}
-                    alt={photo.caption ?? "我们的照片"}
-                    draggable={false}
-                    className="max-h-[72vh] max-w-full"
-                  />
-                  {photo.liveVideo && (
-                    <video
-                      ref={liveRef}
-                      src={liveBlobSrc?.id === photo.id ? liveBlobSrc.url : photo.liveVideo}
-                      playsInline
-                      preload="auto"
-                      onPlaying={() => setLiveWarming(false)}
-                      onWaiting={() => setLiveWarming(true)}
-                      onEnded={() => setLive({ id: photo.id, on: false })}
-                      className={cn(
-                        "absolute inset-0 h-full w-full object-cover transition-opacity duration-150",
-                        livePlaying ? "opacity-100" : "pointer-events-none opacity-0"
-                      )}
-                    />
-                  )}
-                  {photo.liveVideo && !livePlaying && !liveWarming && (
-                    <span className="pointer-events-none absolute left-3 top-3 flex items-center gap-1 rounded-full bg-ink/55 px-2 py-0.5 text-[10px] font-bold tracking-[0.18em] text-paper backdrop-blur">
-                      <span className="size-1.5 rounded-full bg-rose" />
-                      LIVE
-                    </span>
-                  )}
-                  {liveWarming && (
-                    <span className="pointer-events-none absolute left-3 top-3 flex items-center gap-1.5 rounded-full bg-ink/55 px-2.5 py-1 text-[10px] font-bold tracking-[0.12em] text-paper backdrop-blur">
-                      <span className="size-1.5 animate-pulse rounded-full bg-butter" />
-                      实况加载中
-                    </span>
-                  )}
-                </div>
-              </div>
-            )}
-            <figcaption className="mt-4 flex max-w-2xl flex-col items-center gap-2 text-paper">
-              {photo.note && (
-                <p className="max-w-lg text-center font-hand text-lg leading-relaxed opacity-80">{photo.note}</p>
-              )}
-              <div className="flex flex-wrap items-baseline justify-center gap-3">
-                {canEdit ? (
-                  <CaptionQuickEdit
-                    mediaId={photo.id}
-                    caption={photo.caption}
-                    onSaved={(c) => onCaptionChange?.(photo.id, c)}
-                  />
-                ) : (
-                  photo.caption && <span className="font-script text-3xl leading-none">{photo.caption}</span>
-                )}
-                {canEditDate && photo ? (
-                  <MediaDateEdit
-                    mediaId={photo.id}
-                    date={dateById[photo.id] ?? photo.entryDate}
-                    onSaved={(d) => {
-                      setDateById((prev) => ({ ...prev, [photo.id]: d }));
-                      onDateChange?.(photo.id, d);
-                    }}
-                  />
-                ) : (
-                  <span className="font-round text-sm tracking-widest opacity-70">
-                    {(dateById[photo?.id ?? ""] ?? photo?.entryDate ?? "").replaceAll("-", ".")}
-                  </span>
-                )}
-                {canDelete && photo && (
-                  <MediaDeleteButton
-                    mediaId={photo.id}
-                    onDeleted={() => {
-                      onDelete?.(photo.id);
-                      // 删掉的是最后一张就收起灯箱，否则停在原位（数组前移，正好显示下一张）
-                      if (photos.length <= 1) onClose();
-                    }}
-                  />
-                )}
-                {(photo.tags ?? []).map((t) => (
-                  <span key={t} className="rounded-full bg-paper/20 px-2 py-0.5 font-hand text-base leading-snug">
-                    {t}
-                  </span>
-                ))}
-                {!isVideo && photo.liveVideo && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const v = liveRef.current;
-                      if (!v) return;
-                      if (livePlaying) {
-                        v.pause();
-                        setLive({ id: photo.id, on: false });
-                        return;
+                className="relative flex max-h-full flex-col items-center [touch-action:pan-y]"
+                initial={{ scale: 0.94, opacity: 0, rotate: -1 }}
+                animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                exit={{ scale: 0.96, opacity: 0 }}
+                transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                onClick={(e) => e.stopPropagation()}
+                onTouchStart={(e) => {
+                  if (e.touches.length === 1) {
+                    touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, time: Date.now() };
+                    if (!isVideo && photo?.liveVideo) {
+                      longPressTimer.current = setTimeout(() => {
+                        playLive();
+                      }, 300);
+                    }
+                  }
+                }}
+                onTouchMove={(e) => {
+                  if (touchStart.current && e.touches.length === 1) {
+                    const dx = e.touches[0].clientX - touchStart.current.x;
+                    const dy = e.touches[0].clientY - touchStart.current.y;
+                    if (Math.abs(dx) > 15 || Math.abs(dy) > 15) {
+                      if (longPressTimer.current) {
+                        clearTimeout(longPressTimer.current);
+                        longPressTimer.current = null;
                       }
-                      v.currentTime = 0;
-                      v.muted = false;
-                      setLive({ id: photo.id, on: true });
-                      setLiveWarming(true);
-                      void v.play().catch(() => {
-                        v.muted = true;
-                        void v.play().catch(() => undefined);
-                      });
-                    }}
-                    className="rounded-full bg-rose-deep px-3 py-1 text-xs font-bold tracking-[0.15em] text-paper transition hover:opacity-85"
-                  >
-                    {livePlaying ? "停止" : "LIVE 回放"}
-                  </button>
+                    }
+                  }
+                }}
+                onTouchEnd={(e) => {
+                  if (longPressTimer.current) {
+                    clearTimeout(longPressTimer.current);
+                    longPressTimer.current = null;
+                  }
+                  const s = touchStart.current;
+                  touchStart.current = null;
+                  if (!s || e.changedTouches.length === 0) return;
+                  const dx = e.changedTouches[0].clientX - s.x;
+                  const dy = e.changedTouches[0].clientY - s.y;
+                  if (Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy) * 1.4) {
+                    go(dx < 0 ? 1 : -1);
+                    return;
+                  }
+                  if (dy > 70 && Math.abs(dy) > Math.abs(dx) * 1.6) {
+                    onClose();
+                  }
+                }}
+              >
+                {isVideo ? (
+                  <video
+                    key={photo.id}
+                    src={photo.url}
+                    poster={photo.posterUrl ?? undefined}
+                    controls
+                    autoPlay
+                    playsInline
+                    onError={() => setVideoErr({ id: photo.id })}
+                    className="max-h-[70vh] max-w-full rounded-lg bg-ink shadow-lifted"
+                  />
+                ) : (
+                  <div className="rounded-lg bg-white p-2.5 shadow-lifted sm:p-3">
+                    <div className="relative select-none [-webkit-touch-callout:none]">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={photo.url}
+                        alt={photo.caption ?? "我们的照片"}
+                        draggable={false}
+                        className="max-h-[70vh] max-w-full rounded-xs"
+                      />
+                      {photo.liveVideo && (
+                        <video
+                          ref={liveRef}
+                          src={liveBlobSrc?.id === photo.id ? liveBlobSrc.url : photo.liveVideo}
+                          playsInline
+                          preload="auto"
+                          onPlaying={() => setLiveWarming(false)}
+                          onWaiting={() => setLiveWarming(true)}
+                          onEnded={() => setLive({ id: photo.id, on: false })}
+                          className={cn(
+                            "absolute inset-0 h-full w-full object-cover transition-opacity duration-150",
+                            livePlaying ? "opacity-100" : "pointer-events-none opacity-0"
+                          )}
+                        />
+                      )}
+                      {photo.liveVideo && !livePlaying && !liveWarming && (
+                        <span className="pointer-events-none absolute left-3 top-3 flex items-center gap-1 rounded-full bg-ink/55 px-2 py-0.5 text-[10px] font-bold tracking-[0.18em] text-paper backdrop-blur">
+                          <span className="size-1.5 rounded-full bg-rose" />
+                          LIVE
+                        </span>
+                      )}
+                      {liveWarming && (
+                        <span className="pointer-events-none absolute left-3 top-3 flex items-center gap-1.5 rounded-full bg-ink/55 px-2.5 py-1 text-[10px] font-bold tracking-[0.12em] text-paper backdrop-blur">
+                          <span className="size-1.5 animate-pulse rounded-full bg-butter" />
+                          实况加载中
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 )}
-              </div>
-            </figcaption>
-            {videoBroken && (
-              <p className="mt-2 max-w-md text-center font-round text-sm leading-relaxed text-paper/80">
-                这个浏览器放不了这段视频{photo?.hevc ? "（HEVC 编码）" : ""}，用 iPhone / Mac 打开没问题。
-              </p>
-            )}
-          </motion.figure>
-
-          {photos.length > 1 && (
-            <p className="font-round text-sm tracking-widest text-paper/70">
-              {index! + 1} / {photos.length}
-            </p>
-          )}
+                <figcaption className="mt-4 flex max-w-2xl flex-col items-center gap-2 text-paper">
+                  {photo.note && (
+                    <p className="max-w-lg text-center font-hand text-lg leading-relaxed opacity-80">{photo.note}</p>
+                  )}
+                  <div className="flex flex-wrap items-baseline justify-center gap-3">
+                    {canEdit ? (
+                      <CaptionQuickEdit
+                        mediaId={photo.id}
+                        caption={photo.caption}
+                        onSaved={(c) => onCaptionChange?.(photo.id, c)}
+                      />
+                    ) : (
+                      photo.caption && <span className="font-script text-3xl leading-none">{photo.caption}</span>
+                    )}
+                    {canEditDate && photo ? (
+                      <MediaDateEdit
+                        mediaId={photo.id}
+                        date={dateById[photo.id] ?? photo.entryDate}
+                        onSaved={(d) => {
+                          setDateById((prev) => ({ ...prev, [photo.id]: d }));
+                          onDateChange?.(photo.id, d);
+                        }}
+                      />
+                    ) : (
+                      <span className="font-round text-sm tracking-widest opacity-70">
+                        {(dateById[photo?.id ?? ""] ?? photo?.entryDate ?? "").replaceAll("-", ".")}
+                      </span>
+                    )}
+                    {canDelete && photo && (
+                      <MediaDeleteButton
+                        mediaId={photo.id}
+                        onDeleted={() => {
+                          onDelete?.(photo.id);
+                          if (photos.length <= 1) onClose();
+                        }}
+                      />
+                    )}
+                    {(photo.tags ?? []).map((t) => (
+                      <span key={t} className="rounded-full bg-paper/20 px-2 py-0.5 font-hand text-base leading-snug">
+                        {t}
+                      </span>
+                    ))}
+                    {!isVideo && photo.liveVideo && (
+                      <button
+                        type="button"
+                        onClick={playLive}
+                        className="rounded-full bg-rose-deep px-3.5 py-1 text-xs font-bold tracking-[0.15em] text-paper shadow-sm transition hover:opacity-85 active:scale-95"
+                      >
+                        {livePlaying ? "停止" : "LIVE 回放"}
+                      </button>
+                    )}
+                  </div>
+                </figcaption>
+                {videoBroken && (
+                  <p className="mt-2 max-w-md text-center font-round text-sm leading-relaxed text-paper/80">
+                    这个浏览器放不了这段视频{photo?.hevc ? "（HEVC 编码）" : ""}，用 iPhone / Mac 打开没问题。
+                  </p>
+                )}
+              </motion.figure>
+            </div>
           </div>
-          </div>
 
+          {/* 桌面端左右翻页浮钮（移动端使用手势左右划动与下拉关闭） */}
           <button
             type="button"
             aria-label="上一张"
@@ -291,7 +345,7 @@ export function Lightbox({
               e.stopPropagation();
               go(-1);
             }}
-            className="absolute left-3 top-1/2 grid size-11 -translate-y-1/2 place-items-center rounded-full bg-paper/15 text-paper backdrop-blur transition hover:bg-paper/30"
+            className="absolute left-4 top-1/2 hidden size-11 -translate-y-1/2 place-items-center rounded-full bg-paper/20 text-paper backdrop-blur transition hover:bg-paper/35 active:scale-95 sm:grid"
           >
             <CaretLeft weight="bold" className="size-6" />
           </button>
@@ -302,17 +356,9 @@ export function Lightbox({
               e.stopPropagation();
               go(1);
             }}
-            className="absolute right-3 top-1/2 grid size-11 -translate-y-1/2 place-items-center rounded-full bg-paper/15 text-paper backdrop-blur transition hover:bg-paper/30"
+            className="absolute right-4 top-1/2 hidden size-11 -translate-y-1/2 place-items-center rounded-full bg-paper/20 text-paper backdrop-blur transition hover:bg-paper/35 active:scale-95 sm:grid"
           >
             <CaretRight weight="bold" className="size-6" />
-          </button>
-          <button
-            type="button"
-            aria-label="关闭"
-            onClick={onClose}
-            className={cn("absolute right-4 top-4 grid size-11 place-items-center rounded-full bg-paper/15 text-paper backdrop-blur transition hover:bg-paper/30")}
-          >
-            <X weight="bold" className="size-5" />
           </button>
         </motion.div>
       )}

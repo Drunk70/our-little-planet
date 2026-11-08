@@ -144,8 +144,8 @@ export function BgmPlayer({ src, title, lyrics }: { src: string; title: string; 
   const pct = dur ? (cur / dur) * 100 : 0;
 
   return (
-    // 右下角往左让一格：最角落留给全站的「回到顶部」按钮，避免叠在一起
-    <div className="fixed bottom-5 right-[4.25rem] z-40 flex flex-col items-end gap-3">
+    // 右下角往左让一格：最角落留给全站的「回到顶部」按钮，移动端避开底部导航坞
+    <div className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] right-16 z-30 flex flex-col items-end gap-3 md:bottom-5 md:right-[4.25rem]">
       <AnimatePresence>
         {open && hasLyrics && (
           <motion.div

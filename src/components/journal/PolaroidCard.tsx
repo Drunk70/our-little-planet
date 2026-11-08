@@ -92,9 +92,9 @@ export function PolaroidCard({
   return (
     <figure
       className={cn(
-        "group relative select-none bg-white px-3 pt-3 pb-2.5 shadow-card [-webkit-touch-callout:none]",
+        "group polaroid-frame relative select-none px-2.5 pt-2.5 pb-2 sm:px-3 sm:pt-3 sm:pb-2.5 [-webkit-touch-callout:none]",
         "transition-[transform,box-shadow] duration-500 ease-spring",
-        !noHover && "hover:z-10 hover:[transform:rotate(0deg)_translateY(-8px)] hover:shadow-lifted",
+        !noHover && "sm:hover:z-10 sm:hover:[transform:rotate(0deg)_translateY(-8px)] sm:hover:shadow-lifted active:scale-[0.98]",
         fixedFrame && "flex h-full min-h-0 flex-col",
         className
       )}
@@ -105,7 +105,7 @@ export function PolaroidCard({
       )}
       <div
         ref={boxRef}
-        className={cn("relative w-full overflow-hidden bg-[#f1e7d8]", fixedFrame && "min-h-0 flex-1")}
+        className={cn("polaroid-photo-inner relative w-full overflow-hidden bg-[#f1e7d8] rounded-xs", fixedFrame && "min-h-0 flex-1")}
         style={fixedFrame ? undefined : width && height ? { aspectRatio: `${width} / ${height}` } : { aspectRatio: "4 / 5" }}
       >
         {usePoster ? (
@@ -180,7 +180,7 @@ export function PolaroidCard({
       </div>
       <figcaption className={cn("polaroid-caption px-1 pt-2 pb-0.5 text-center", fixedFrame && "h-[4.375rem] shrink-0 overflow-hidden")}>
         {caption && (
-          <p className={cn("font-script text-2xl leading-tight text-ink/90", captionLines === 1 ? "line-clamp-1" : "line-clamp-2")}>
+          <p className={cn("font-script text-xl leading-tight text-ink/90 sm:text-2xl", captionLines === 1 ? "line-clamp-1" : "line-clamp-2")}>
             {caption}
           </p>
         )}

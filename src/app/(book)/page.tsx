@@ -115,14 +115,14 @@ export default async function HomePage() {
   return (
     <div className="py-8 sm:py-12">
       {/* 摊开的第一页 */}
-      <section className="relative grid items-center gap-14 py-8 sm:py-12 lg:min-h-[calc(100dvh-14rem)] lg:grid-cols-[1.05fr_0.95fr]">
+      <section className="relative grid items-center gap-8 py-3 sm:gap-14 sm:py-12 lg:min-h-[calc(100dvh-14rem)] lg:grid-cols-[1.05fr_0.95fr]">
         <NightSky />
         <div>
           <p className="font-script text-2xl text-rose-deep">{settings.names} 的手账</p>
           <ScribbleTitle title={settings.title} />
-          <DayCounter startDate={settings.startDate} className="mt-10" />
+          <DayCounter startDate={settings.startDate} className="mt-6 sm:mt-10" />
           <TimeGreeting startDate={settings.startDate} className="mt-4" />
-          <div className="mt-10 flex flex-wrap items-center gap-4">
+          <div className="mt-6 flex flex-wrap items-center gap-3 sm:mt-10 sm:gap-4">
             {sections.album && (
               <Link href="/album" className="btn-primary">
                 <Images weight="fill" className="size-5" />
