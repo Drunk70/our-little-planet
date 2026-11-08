@@ -214,7 +214,7 @@ curl -X POST https://你的域名/api/quick \
 
 ## 快速开始
 
-需要 Node.js 20+；推荐装上 ffmpeg（读视频 / 录音时长、抽视频封面，`brew install ffmpeg` / `apt install ffmpeg`）。
+需要 Node.js 22+（当前 better-sqlite3 13 的要求）；推荐装上 ffmpeg（读视频 / 录音时长、抽视频封面，`brew install ffmpeg` / `apt install ffmpeg`）。Windows 本地安装与启动见 [本地开发说明](docs/local-development-windows.md)。
 
 ```bash
 npm install
@@ -272,7 +272,7 @@ npm run dev                  # 打开 http://localhost:3000
 
 ## 部署
 
-需要一台能跑 Node 20+ 的常驻机器（轻量云服务器即可）：
+需要一台能跑 Node 22+ 的常驻机器（轻量云服务器即可）：
 
 ```bash
 # 服务器上
