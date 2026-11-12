@@ -70,3 +70,19 @@ certbot certonly --webroot -w /var/www/planet-acme \
 将 `deploy/renew-certificate.sh` 安装到 `/etc/letsencrypt/renewal-hooks/deploy/` 并设为可执行，启用 `certbot.timer`。用 `certbot renew --dry-run --run-deploy-hooks --no-random-sleep-on-renew` 验证续签和重载；签发和续签无需购买阿里云证书套餐。
 
 在服务器 `.env.local` 配置 `ICP_RECORD_NUMBER=自己的完整网站备案号`，重启应用后页脚显示号码并链接 `https://beian.miit.gov.cn/`。这是运行时配置，号码变更不需要重新构建。上线后继续办理公安联网备案，审核通过后再添加对应备案信息。
+
+## 修改网站密码
+
+网站使用读者密码和作者口令，不依赖独立用户名。在服务器 `/opt/our-little-planet/.env.local` 修改 `READER_PASSWORD` 或 `AUTHOR_PASSWORD`，执行 `systemctl restart our-little-planet` 即可生效，无需 `npm run build` 或重新上传代码。网站会短暂重启，记录和媒体保留。
+
+目前登录凭证由 `AUTH_SECRET` 签名，**只改密码不会立即使已登录设备退出**。如果密码疑似泄露，或者需要让旧设备全部重新登录，同时将 `AUTH_SECRET` 换为新的随机长字符串后重启；此操作会让读者、作者和彩蛋的旧登录凭证一并失效。同步更新自己安全保存的部署配置和桌面登录信息，密码与密钥均不提交 Git。
+
+## 服务器入口保护
+
+公网 TCP 服务为 80（HTTPS 跳转及证书续签）、443（网站）和 22（SSH 维护）。应用 3000 和 DNS 服务只监听本机。未使用 FTP，20/21 端口没有监听；Linux 网站不需要 Windows 远程桌面 3389 安全组规则。
+
+`deploy/ssh-key-only.conf.example` 是密钥登录配置。安装前必须用部署私钥验证新的 SSH 连接成功，保留阿里云控制台应急维护途径，并设置定时回退。安装到 `/etc/ssh/sshd_config.d/00-planet-key-only.conf` 后执行 `sshd -t` 和 `systemctl reload ssh`，再次验证新的密钥连接，最后撤销回退。有效配置应显示 `passwordauthentication no`、`kbdinteractiveauthentication no` 和 `permitrootlogin prohibit-password`；本地 SSH 转发继续可用。
+
+关闭 SSH 密码认证后，远程密码登录会被拒绝，应使用自己的部署私钥。保留服务器系统密码供控制台/VNC应急登录；妥善备份私钥，不能发到 GitHub。端口扫描仍可能发现正常提供服务的端口，密钥认证和访问限制负责阻止未授权登录，不能靠更改端口号替代。
+
+这些设置是基础部署防护，不等于对整个应用完成了全面安全审计。还需持续安装安全更新，保持管理员凭证私密，并定期将数据备份下载到本地。

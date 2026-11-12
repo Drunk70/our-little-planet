@@ -1,0 +1,12 @@
+# 安装为 /etc/ssh/sshd_config.d/00-planet-key-only.conf。
+# 必须先验证独立新连接能使用自己的 SSH 私钥登录，并准备定时回退。
+# 执行 sshd -t 后重载 ssh，验证新密钥连接成功后再撤销回退。
+# 保留 SSH 的本地转发能力，便于 localhost 预览；不调整端口和现有 authorized_keys。
+PubkeyAuthentication yes
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+PermitEmptyPasswords no
+PermitRootLogin prohibit-password
+X11Forwarding no
+MaxAuthTries 3
+LoginGraceTime 30
