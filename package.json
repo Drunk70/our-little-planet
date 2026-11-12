@@ -11,6 +11,7 @@
     "backup:verify": "node scripts/backup.mjs verify",
     "restore": "node scripts/backup.mjs restore",
     "test:backup": "node --test scripts/test-backup.mjs",
+    "test:login": "node --test scripts/test-login-guard.mjs",
     "seed": "node scripts/seed.mjs",
     "migrate-oss": "node scripts/migrate-to-oss.mjs",
     "convert-heic": "node scripts/convert-heic.mjs",

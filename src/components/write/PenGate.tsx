@@ -30,7 +30,8 @@ export function PenGate({ demoHint }: { demoHint?: string }) {
         window.location.reload();
         return;
       }
-      setError("这不是作者的口令哦");
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      setError(data.error ?? "这不是作者的口令哦");
       setShake(true);
       setTimeout(() => setShake(false), 500);
       inputRef.current?.focus();
