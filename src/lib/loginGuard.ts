@@ -23,22 +23,18 @@ function getGuard() {
   return globalThis.__planetLoginGuard;
 }
 
-/** Keep the two password entrances on the same IP budget. */
-export function guardedLogin(
+/** Keep every password entrance on the same IP budget. */
+function guardedAttempt(
   request: Request,
-  password: unknown,
-  authorOnly = false,
+  verify: () => LoginRole | null,
+  invalidMessage: string,
 ): LoginRole | NextResponse {
   try {
     const identity = loginIdentity(request.headers, {
       trustProxy: process.env.LOGIN_TRUST_PROXY === "1",
       secret: authSecret(),
     });
-    const verdict = getGuard().evaluate(identity, () => {
-      if (checkPassword("author", password)) return "author";
-      if (!authorOnly && checkPassword("reader", password)) return "reader";
-      return null;
-    });
+    const verdict = getGuard().evaluate(identity, verify);
     if (verdict.allowed) return verdict.role;
     if (verdict.retryAfterSeconds > 0) {
       const minutes = Math.ceil(verdict.retryAfterSeconds / 60);
@@ -48,7 +44,7 @@ export function guardedLogin(
       );
     }
     return NextResponse.json(
-      { error: authorOnly ? "这不是作者的口令哦" : "密码好像不对哦，再想想？" },
+      { error: invalidMessage },
       { status: 401, headers: { "Cache-Control": "no-store" } },
     );
   } catch {
@@ -59,4 +55,29 @@ export function guardedLogin(
       { status: 503, headers: { "Cache-Control": "no-store" } },
     );
   }
+}
+
+export function guardedLogin(
+  request: Request,
+  password: unknown,
+  authorOnly = false,
+): LoginRole | NextResponse {
+  return guardedAttempt(request, () => {
+    if (checkPassword("author", password)) return "author";
+    if (!authorOnly && checkPassword("reader", password)) return "reader";
+    return null;
+  }, authorOnly ? "这不是作者的口令哦" : "密码好像不对哦，再想想？");
+}
+
+/** A successful egg password check only authorizes its own unlock route. */
+export function guardedUnlock(
+  request: Request,
+  password: unknown,
+  expected: string,
+): NextResponse | null {
+  const verdict = guardedAttempt(request, () => {
+    if (typeof password !== "string" || password.length === 0) return null;
+    return password === expected ? "reader" : null;
+  }, "这串密码不对哦，再想想？");
+  return verdict instanceof NextResponse ? verdict : null;
 }

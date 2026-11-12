@@ -23,7 +23,7 @@ export function loginIdentity(headers, { trustProxy = false, secret }) {
   return createHash("sha256").update(`${secret}:login:${address}`).digest("hex");
 }
 
-/** A shared, durable budget for both reader and author password endpoints. */
+/** A shared, durable budget for reader, author, and egg password endpoints. */
 export function createLoginRateLimit(database) {
   database.exec(`
     CREATE TABLE IF NOT EXISTS login_attempts (

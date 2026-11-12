@@ -75,7 +75,7 @@ server {
     # 保持 Next.js 流式响应；不在代理上缓存含登录态的页面。
     proxy_buffering off;
 
-    location ~ ^/api/(lock|pen)$ {
+    location ~ ^/api/(lock|pen|eggs/[a-f0-9]+/unlock)$ {
         client_max_body_size 16k;
         limit_req zone=planet_login burst=10 nodelay;
         limit_req_status 429;
