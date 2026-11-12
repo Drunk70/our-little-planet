@@ -52,3 +52,21 @@ systemctl is-active our-little-planet our-little-planet-traffic-guard our-little
 备案通过后再配置域名解析、Nginx HTTPS、页脚备案号及链接。应用继续只监听本机，由 Nginx 转发，安全组只按需要放行 80/443。
 
 备份接口可能需要较长时间准备文件，在 Nginx 中为 `/api/backup` 配置 `proxy_read_timeout 3600s` 和 `proxy_buffering off`。普通媒体上传限制也需按使用需求设定。正式密码、签名密钥和数据库均不能提交 Git。
+
+### 域名、证书与备案号
+
+在 DNS 中把根域名 `@` 和 `www` 的 A 记录指向服务器公网 IPv4，使用免费版解析即可。安全组开放 TCP 80 和 443，保留原有 SSH 规则；3000 端口继续只监听本机。
+
+安装 Nginx 和 Certbot，创建 `/var/www/planet-acme/.well-known/acme-challenge`，并保证这些目录权限为 `0755`。首次签发前，启用替换过域名的 `deploy/nginx-acme.conf.example`，移除默认欢迎页配置，并通过 `nginx -t`。此时 80 端口只提供 ACME 验证目录。
+
+```sh
+certbot certonly --webroot -w /var/www/planet-acme \
+  --cert-name example.com -d example.com -d www.example.com \
+  --non-interactive --agree-tos --register-unsafely-without-email
+```
+
+也可以用 `--email 自己的邮箱` 替换不登记邮箱的选项。证书签发完成后，换成 `deploy/nginx.conf.example` 并测试、重载 Nginx。此配置适用于 Nginx 1.25.1+，把 HTTP 和 `www` 统一跳转到根域名 HTTPS，保留流式响应，为备份设置一小时等待时间，并限制登录接口的重复尝试。
+
+将 `deploy/renew-certificate.sh` 安装到 `/etc/letsencrypt/renewal-hooks/deploy/` 并设为可执行，启用 `certbot.timer`。用 `certbot renew --dry-run --run-deploy-hooks --no-random-sleep-on-renew` 验证续签和重载；签发和续签无需购买阿里云证书套餐。
+
+在服务器 `.env.local` 配置 `ICP_RECORD_NUMBER=自己的完整网站备案号`，重启应用后页脚显示号码并链接 `https://beian.miit.gov.cn/`。这是运行时配置，号码变更不需要重新构建。上线后继续办理公安联网备案，审核通过后再添加对应备案信息。

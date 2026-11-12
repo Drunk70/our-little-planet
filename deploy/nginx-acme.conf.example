@@ -1,0 +1,22 @@
+# 首次签发证书使用：替换 example.com，放到 Nginx 的 sites-enabled。
+# 这里只开放证书验证目录；正式页面等证书签发后再启用。
+server {
+    listen 80 default_server;
+    server_name _;
+    return 444;
+}
+
+server {
+    listen 80;
+    server_name example.com www.example.com;
+
+    location ^~ /.well-known/acme-challenge/ {
+        root /var/www/planet-acme;
+        default_type text/plain;
+        try_files $uri =404;
+    }
+
+    location / {
+        return 503;
+    }
+}

@@ -1,61 +1,120 @@
-# 我们的小星球 · Nginx 反代示例
-# 把 example.com 换成你的域名；HTTPS 证书可用 certbot --nginx 自动签发并写入下面的 ssl_* 行
-server {
-    server_name example.com www.example.com;
+# 放到 /etc/nginx/sites-available/our-little-planet，替换 example.com。
+# 先使用 nginx-acme.conf.example 完成证书签发，再启用本文件。
+# 适用于 Nginx 1.25.1+；应用继续只监听 127.0.0.1:3000。
 
-    # 文件总量上限 500 MiB；额外 1 MiB 只供 multipart 表单包装使用。
-    client_max_body_size 501m;
+limit_req_zone $binary_remote_addr zone=planet_login:1m rate=10r/m;
+
+server {
+    listen 80 default_server;
+    server_name _;
+    server_tokens off;
+    return 444;
+}
+
+server {
+    listen 443 ssl default_server;
+    server_name _;
+    server_tokens off;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_reject_handshake on;
+}
+
+server {
+    listen 80;
+    server_name example.com www.example.com;
+    server_tokens off;
+
+    location ^~ /.well-known/acme-challenge/ {
+        root /var/www/planet-acme;
+        default_type text/plain;
+        try_files $uri =404;
+    }
+
+    location / {
+        return 308 https://example.com$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name www.example.com;
+    server_tokens off;
+    ssl_certificate /etc/letsencrypt/live/example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/example.com/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    return 308 https://example.com$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name example.com;
+    server_tokens off;
+    ssl_certificate /etc/letsencrypt/live/example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/example.com/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_session_cache shared:PlanetTLS:10m;
+    ssl_session_timeout 1d;
+    ssl_session_tickets off;
+
+    add_header Strict-Transport-Security "max-age=31536000" always;
+    add_header X-Content-Type-Options nosniff always;
+
+    # 单个文件上限 2 GiB；额外 1 MiB 供 multipart 表单包装使用。
+    client_max_body_size 2049m;
+    client_body_timeout 300s;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $remote_addr;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header Connection "";
+    proxy_read_timeout 600s;
+    proxy_send_timeout 600s;
+    # 保持 Next.js 流式响应；不在代理上缓存含登录态的页面。
+    proxy_buffering off;
+
+    location ~ ^/api/(lock|pen)$ {
+        client_max_body_size 16k;
+        limit_req zone=planet_login burst=10 nodelay;
+        limit_req_status 429;
+        error_page 429 =429 @login_too_frequent;
+        proxy_pass http://127.0.0.1:3000;
+    }
+
+    location @login_too_frequent {
+        default_type application/json;
+        charset utf-8;
+        return 429 '{"error":"尝试过于频繁，请稍后再试"}';
+    }
 
     location = /api/quick {
+        # 快捷指令 multipart 附件上限 150 MiB；大文件另走分步直传。
+        client_max_body_size 151m;
         error_page 413 =413 @quick_too_large;
         error_page 502 503 504 =503 @quick_unavailable;
-
         proxy_pass http://127.0.0.1:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_read_timeout 300s;
-        proxy_send_timeout 300s;
     }
 
     location @quick_too_large {
         default_type application/json;
         charset utf-8;
-        return 413 '{"ok":false,"error":"一次上传的文件总大小不能超过 500MB，请压缩视频或分批上传"}';
+        return 413 '{"ok":false,"error":"单个请求带附件不能超过150MB，大视频请使用分步上传"}';
     }
 
     location @quick_unavailable {
         default_type application/json;
         charset utf-8;
-        return 503 '{"ok":false,"error":"服务器暂时不可用或处理超时，请先到手帐页面确认是否已保存，避免重复提交"}';
+        return 503 '{"ok":false,"error":"服务器暂时不可用或处理超时，请先确认是否已保存，避免重复提交"}';
+    }
+
+    location = /api/backup {
+        proxy_read_timeout 3600s;
+        proxy_pass http://127.0.0.1:3000;
     }
 
     location / {
         proxy_pass http://127.0.0.1:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_read_timeout 300s;
-        proxy_send_timeout 300s;
     }
-
-    listen 443 ssl;
-    ssl_certificate /etc/letsencrypt/live/example.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/example.com/privkey.pem;
-    include /etc/letsencrypt/options-ssl-nginx.conf;
-    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
-}
-
-server {
-    if ($host = example.com) {
-        return 301 https://$host$request_uri;
-    }
-
-    listen 80;
-    server_name example.com www.example.com;
-    return 404;
 }
